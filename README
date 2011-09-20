@@ -1,0 +1,3 @@
+Whereas I find the Ruby core class URI is not too useful for parsing URLs, I put this together.
+
+The fields @scheme, @host, @port, @path, @data are all mutable.

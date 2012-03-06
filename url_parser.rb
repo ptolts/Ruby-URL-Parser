@@ -31,7 +31,7 @@ class Entrity
 				self.new(url)
 			end
 			
-			# Returns true if two urls (not parsed) match
+			# Returns true if two urls (parsed) match
 			# - ignore_nil = [boolean] - a nil value for an attribute in either url counts as a match
 			# - normalize = [boolean] - if one path is relative but not both, then the relative path will be normalized as though it were relative to the absolute path
 			def self.urls_identical?(url1, url2, ignore_nil=true, normalize=true)
@@ -43,57 +43,38 @@ class Entrity
 				end
 				true
 			end
-			
-			# Normalizes the path of this instance against another url
-			# - abs_url [String or instance of this class]
-			def normalize_path!(abs_url=nil)
-				# Either this must be from_root? or a parsed_abs_url must be provided
-				if abs_url.nil? and !from_root?
-					raise "Absolute url must be provided in args because this path does not start at root: #{@path}" 
-				elsif !from_root?
-				# Concatentate @path on the end of abs_url's path
-					abs_url = Parsed.parse(abs_url) unless abs_url.is_a?(Parsed) # Ensure abs_url is parsed
-					abs_path = abs_url.path # Get path
-					raise "Absolute url does not have absolute path: {#{abs_path}}" unless abs_url.from_root?
-					abs_path = abs_path.slice(1..-1)
-					abs_path = File.split(abs_path)[0] unless File.extname(abs_path).empty? # Drop last element of path if it has an extension (i.e. looks like file)
-					abs_path += "/#{@path}" # concatenate abs_path and @path
-				else
-					abs_path = @path
+
+			# Returns @path, with '.' and '..' cleaned up
+			# abs_path : if supplied, resolves @path to directory of abs_path
+			def normalize_path(abs_path=nil)
+				path = Pathname.new(@path)
+				unless abs_path.nil?
+					path = Pathname.new(abs_path).join path
 				end
-				# Split @path into array of dirs; remove all dirs preceding '..'; remove all '..', ''
-				dirs = abs_path.split('/')
-				indices_to_delete = []
-				dirs.each_index do |i|
-					if dirs[i] == '..'
-						raise "Bad absolute url. Path begins with '..': {#{abs_path}}" if i == 0
-						indices_to_delete.push(i-1, i)
-					elsif dirs[i].empty?
-						indices_to_delete.push(i)
-					end
-				end
-				indices_to_delete.each_index do |i|
-					dirs.delete_at(indices_to_delete[i] - i)
-				end
-				# Set path to normalized url
-				@path = '/' + dirs.join('/')
+				path.cleanpath.to_s
 			end
+
+			alias_method :normalize, :normalize_path
+			
+			# Cleans up '.' and '..' in @path
+			# =>  abs_path : if supplied, resolves @path to directory of abs_path
+			# =>  NB: if @path starts with '/', the abs_path parameter will have no effect
+			def normalize_path!(abs_path=nil)
+				@path = normalize_path(abs_path)
+			end
+
+			alias_method :normalize!, :normalize_path!
 					
 			# Does instance lack a scheme or host
 			def relative?
-				scheme.nil? or host.nil?
+				path[0] == 47
 			end
 			
 			# Does instance have a scheme and host
 			def absolute?
 				!relative?
 			end
-			
-			# Does path begin with '/' (ASCII:47)
-			def from_root?
-				path[0] == 47
-			end
-			
+		
 			# Return string url
 			def to_s
 				scheme = "#{@scheme}://" unless @scheme.nil?

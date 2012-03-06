@@ -1,10 +1,13 @@
 Usage
 =====
 
+The Ruby core class URI doesn't handle relative urls, so I created this module.
+
 Parse a url
 -----
+
 	text = "http://www.watchseries-online.com:80/bar/foo.html#qux?s=bob%27s+burgers&search={"
-	url = Entrity::URL::Parsed.new(text)
+	url = Entrity::URL::parse(text)
 	url.scheme
 	=> 'http'
 	url.host
@@ -20,16 +23,31 @@ Parse a url
 	
 Compare two urls
 -----
-By default, nil values are treated as matches and url strings are normalized (if need be). Turn off default by setting ignore_nil to false in the params.
-	
+
+###Nil values
+
 	url1 = 'http://www.foo.com/bar/baz/qux.html'
-	url2 = '/bar/../baz/qux.html?gravy=train'
-	Entrity::URL::Parsed.urls_identical?(url1, url2)
+	url2 = '/bar/baz/qux.html?gravy=train'
+	Entrity::URL::urls_identical?(url1, url2)
 	=> true
-	Entrity::URL::Parsed.urls_identical?(url1, url2, false)
+	Entrity::URL::urls_identical?(url1, url2, false)
 	=> false
 
-If one url is relative and the other is not, then the relative url will by default attempt to normalize against the absolute url. Turn off default by setting normalize to false in the params.
+Obsesrve that by default, the two strings match, even though one has no host and the other has no query data. Nil attribute values are treated as matches. Turn off default by setting ignore_nil to false in the params.
+
+The foregoing compares Strings. To compare already-parsed urls, use the method Entrity::URL::Parsed::urls_identical?.
+
+
+###'.' and '..' in path
+	
+	url1 = 'http://www.foo.com/bar/baz/qux.html'
+	url2 = 'http://www.foo.com/bar/../bar/baz/qux.html'
+	Entrity::URL::urls_identical?( url1, url2 )
+	=> true
+
+Normalized versions of the path are used when comparing urls.
+
+###Relative URLs
 
 	url1 = 'http://www.foo.com/bar/baz/qux.html'
 	url2 = 'qux.html'
@@ -37,6 +55,14 @@ If one url is relative and the other is not, then the relative url will by defau
 	=> true
 	Entrity::URL::Parsed.urls_identical?(url1, url2, true, false)
 	=> false
+
+By default, if one url is relative and the other is not, then the relative url will attempt to normalize against the absolute url (i.e. as though it were appearing in a hyperlink in the bottom-level directory holding the other url). Turn off this behaviour by setting normalize to false in the params.
+
+Dependencies
+-----
+rubygems 	// for sake of cgi
+cgi			// to parse query string into a hash
+pathname.rb	// to normalize paths containing '.' or '..'
 
 Notes
 -----

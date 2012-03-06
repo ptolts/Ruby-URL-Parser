@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'cgi'
+require 'pathname.rb'
 
 class Entrity
 	
@@ -150,11 +151,9 @@ class Entrity
 				elsif sym == :data
 					attr1 = CGI::parse attr1
 					attr2 = CGI::parse attr2
-					if attr1 == attr2
-						true
-					else
-						Entrity::Matcher::hashes_match?(attr1, attr2)
-					end
+					attr1 == attr2 or Entrity::Matcher::hashes_match?(attr1, attr2)
+				elsif sym == :path
+					Pathname.new(attr1).cleanpath == Pathname.new(attr2).cleanpath
 				else
 					false
 				end

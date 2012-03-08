@@ -21,8 +21,10 @@ module Entrity::URL
 		Parsed.urls_identical?(p1, p2)
 	end
 
-	def self.host(url_string)
-		self.parse(url_string).host
+	# Returns a string representing normalized url for given arg, resolved against abs_url is possible
+	# => will not resolve against abs_url if the supplied url is absolute
+	def self.normalize(url_string, abs_url=nil)
+		self.parse(url_string).normalize!(abs_url)
 	end
 	
 end
@@ -52,7 +54,7 @@ class Entrity::URL::Parsed
 	end
 
 	# Returns @path, with '.' and '..' cleaned up
-	# abs_path : if supplied, resolves @path to directory of abs_path
+	# => abs_path : if supplied, resolves @path to directory of abs_path
 	def normalize_path(abs_path=nil)
 		path = Pathname.new(@path)
 		unless abs_path.nil?
@@ -69,15 +71,20 @@ class Entrity::URL::Parsed
 	end
 
 	# Returns a string representing normalized url for this resource
-	# See #normalize_path.
-	def normalize(abs_path=nil)
-		self.clone.normalize! abs_path
+	# Calls #normalize!; see also #normalize_path.
+	def normalize(abs_url=nil)
+		self.clone.normalize! abs_url
 	end
 
 	# Normalizes @path. Returns a string representing normalized url for this resource
-	# See #normalize_path!.
-	def normalize!(abs_path=nil)
-		normalize_path! abs_path
+	# Calls #normalize_path!.
+	def normalize!(abs_url=nil)
+		parsed_abs_url = abs_url.is_a?( Entrity::URL::Parsed ) ? abs_url : Entrity::URL::parse( abs_url )
+		[:scheme, :host, :port].each do |sym|
+			attr = parsed_abs_url.send sym
+			self.send( "#{sym}=".to_sym(), attr ) unless attr.nil?
+		end
+		normalize_path! parsed_abs_url.path
 		self.to_s
 	end
 			

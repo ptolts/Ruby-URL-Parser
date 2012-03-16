@@ -23,6 +23,7 @@ module Entrity::URL
 
 	# Returns a string representing normalized url for given arg, resolved against abs_url is possible
 	# => will not resolve against abs_url if the supplied url is absolute
+	# => 'abs_url' can be String or Entrity::URL::Parsed
 	def self.normalize(url_string, abs_url=nil)
 		self.parse(url_string).normalize!(abs_url)
 	end
@@ -56,11 +57,13 @@ class Entrity::URL::Parsed
 	# Returns @path, with '.' and '..' cleaned up
 	# => abs_path : if supplied, resolves @path to directory of abs_path
 	def normalize_path(abs_path=nil)
-		path = Pathname.new(@path)
-		unless abs_path.nil?
-			path = Pathname.new(abs_path).join path
+		unless @path.empty?
+			path = Pathname.new(@path)
+			unless abs_path.nil?
+				path = Pathname.new(abs_path).join path
+			end
+			path.cleanpath.to_s
 		end
-		path.cleanpath.to_s
 	end
 
 	# Cleans up '.' and '..' in @path
@@ -71,12 +74,14 @@ class Entrity::URL::Parsed
 	end
 
 	# Returns a string representing normalized url for this resource
+	# => abs_url can be String or Entrity::URL::Parsed
 	# Calls #normalize!; see also #normalize_path.
 	def normalize(abs_url=nil)
 		self.clone.normalize! abs_url
 	end
 
 	# Normalizes @path. Returns a string representing normalized url for this resource
+	# => abs_url can be String or Entrity::URL::Parsed
 	# Calls #normalize_path!.
 	def normalize!(abs_url=nil)
 		parsed_abs_url = abs_url.is_a?( Entrity::URL::Parsed ) ? abs_url : Entrity::URL::parse( abs_url )

@@ -57,7 +57,9 @@ class Entrity::URL::Parsed
 	# Returns @path, with '.' and '..' cleaned up
 	# => abs_path : if supplied, resolves @path to directory of abs_path
 	def normalize_path(abs_path=nil)
-		unless @path.empty?
+		if @path.empty?
+			'/'
+		else
 			path = Pathname.new(@path)
 			unless abs_path.nil?
 				path = Pathname.new(abs_path).join path

@@ -24,8 +24,9 @@ module Entrity::URL
 	# Returns a string representing normalized url for given arg, resolved against abs_url is possible
 	# => will not resolve against abs_url if the supplied url is absolute
 	# => 'abs_url' can be String or Entrity::URL::Parsed
-	def self.normalize(url_string, abs_url=nil)
-		self.parse(url_string).normalize!(abs_url)
+	# => 'trailing_slash' can be nil (neither added nor removed), true (force if no file extension in path), or false (never appears)
+	def self.normalize(url_string, abs_url=nil, trailing_slash=nil)
+		self.parse(url_string).normalize!(abs_url, trailing_slash)
 	end
 	
 end
@@ -56,7 +57,8 @@ class Entrity::URL::Parsed
 
 	# Returns @path, with '.' and '..' cleaned up
 	# => abs_path : if supplied, resolves @path to directory of abs_path
-	def normalize_path(abs_path=nil)
+	# => trailing_slash : can be nil (neither added nor removed (unless path is empty, in which case, it is added)), true (force if no file extension in path), or false (never appears)
+	def normalize_path(abs_path=nil, trailing_slash=nil)
 		if @path.empty?
 			'/'
 		else
@@ -64,34 +66,43 @@ class Entrity::URL::Parsed
 			unless abs_path.nil?
 				path = Pathname.new(abs_path).join path
 			end
-			path.cleanpath.to_s
+			cleanpath = path.cleanpath.to_s
+			if ( 	( trailing_slash == true and File::extname(@path).nil? ) or
+			 		( trailing_slash.nil? and @path[-1] == 47 ) 
+			 	) and cleanpath[-1] != 47
+				cleanpath << '/'
+			end
+			cleanpath
 		end
 	end
 
 	# Cleans up '.' and '..' in @path
 	# =>  abs_path : if supplied, resolves @path to directory of abs_path
 	# =>  NB: if @path starts with '/', the abs_path parameter will have no effect
-	def normalize_path!(abs_path=nil)
-		@path = normalize_path(abs_path)
+	# => trailing_slash : can be nil (neither added nor removed), true (force if no file extension in path), or false (never appears)
+	def normalize_path!(abs_path=nil, trailing_slash=nil)
+		@path = normalize_path(abs_path, trailing_slash)
 	end
 
 	# Returns a string representing normalized url for this resource
 	# => abs_url can be String or Entrity::URL::Parsed
+	# => trailing_slash : can be nil (neither added nor removed), true (force if no file extension in path), or false (never appears)
 	# Calls #normalize!; see also #normalize_path.
-	def normalize(abs_url=nil)
-		self.clone.normalize! abs_url
+	def normalize(abs_url=nil, trailing_slash=nil)
+		self.clone.normalize! abs_url, trailing_slash
 	end
 
 	# Normalizes @path. Returns a string representing normalized url for this resource
 	# => abs_url can be String or Entrity::URL::Parsed
+	# => trailing_slash : can be nil (neither added nor removed), true (force if no file extension in path), or false (never appears)
 	# Calls #normalize_path!.
-	def normalize!(abs_url=nil)
+	def normalize!(abs_url=nil, trailing_slash=nil)
 		parsed_abs_url = abs_url.is_a?( Entrity::URL::Parsed ) ? abs_url : Entrity::URL::parse( abs_url )
 		[:scheme, :host, :port].each do |sym|
 			attr = parsed_abs_url.send sym
 			self.send( "#{sym}=".to_sym(), attr ) if self.send( sym ).nil?
 		end
-		normalize_path! parsed_abs_url.path
+		normalize_path! parsed_abs_url.path, trailing_slash
 		self.to_s
 	end
 			

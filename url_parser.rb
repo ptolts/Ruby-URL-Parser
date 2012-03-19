@@ -89,7 +89,7 @@ class Entrity::URL::Parsed
 		parsed_abs_url = abs_url.is_a?( Entrity::URL::Parsed ) ? abs_url : Entrity::URL::parse( abs_url )
 		[:scheme, :host, :port].each do |sym|
 			attr = parsed_abs_url.send sym
-			self.send( "#{sym}=".to_sym(), attr ) unless attr.nil?
+			self.send( "#{sym}=".to_sym(), attr ) if attr.nil?
 		end
 		normalize_path! parsed_abs_url.path
 		self.to_s

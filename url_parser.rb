@@ -97,12 +97,15 @@ class Entrity::URL::Parsed
 	# => trailing_slash : can be nil (neither added nor removed), true (force if no file extension in path), or false (never appears)
 	# Calls #normalize_path!.
 	def normalize!(abs_url=nil, trailing_slash=nil)
-		parsed_abs_url = abs_url.is_a?( Entrity::URL::Parsed ) ? abs_url : Entrity::URL::parse( abs_url )
-		[:scheme, :host, :port].each do |sym|
-			attr = parsed_abs_url.send sym
-			self.send( "#{sym}=".to_sym(), attr ) if self.send( sym ).nil?
+		normalizing_url = abs_url.is_a?( Entrity::URL::Parsed ) ? abs_url : Entrity::URL::parse( abs_url )
+		# get protocol, host, & port if protocol missing from self
+		if self.scheme.nil?
+			[:scheme, :host, :port].each do |sym|
+				attr = normalizing_url.send sym
+				self.send( "#{sym}=".to_sym(), attr ) if self.send( sym ).nil?
+			end
 		end
-		normalize_path! parsed_abs_url.path, trailing_slash
+		normalize_path! normalizing_url.path, trailing_slash
 		self.to_s
 	end
 			

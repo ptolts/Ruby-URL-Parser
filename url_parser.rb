@@ -64,7 +64,11 @@ class Entrity::URL::Parsed
 		else
 			path = Pathname.new(@path)
 			unless abs_path.nil?
-				path = Pathname.new(abs_path).join path
+				if path.extname.empty?
+					path = Pathname.new(abs_path).join path
+				else
+					path = Pathname.new(abs_path).dirname.join path
+				end
 			end
 			cleanpath = path.cleanpath.to_s
 			if ( 	( trailing_slash == true and File::extname(@path).nil? ) or
